@@ -1,8 +1,8 @@
 import Realm from 'realm';
 
 class RealmPersistInterface {
-    constructor() {
-        this.realm = new Realm({
+    constructor({ encryptionKey }) {
+        const config = {
             schema: [{
                 name: 'Item',
                 primaryKey: 'name',
@@ -11,7 +11,13 @@ class RealmPersistInterface {
                     content: 'string',
                 },
             }],
-        });
+        };
+
+        if (encryptionKey) {
+            config.encryptionKey = encryptionKey;
+        }
+
+        this.realm = new Realm(config);
 
         this.items = this.realm.objects('Item');
     }
@@ -86,6 +92,4 @@ class RealmPersistInterface {
     };
 }
 
-const singleton = new RealmPersistInterface();
-
-export default singleton;
+export default (realmConfig = {}) => new RealmPersistInterface(realmConfig);
