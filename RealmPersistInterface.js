@@ -19,7 +19,6 @@ class RealmPersistInterface {
   getItem (key) {
     return new Promise((resolve, reject) => {
       const matches = this.items.filtered(`name = "${key}"`)
-
       if (matches.length > 0 && matches[0]) {
         resolve(matches[0].content)
       } else {
@@ -30,34 +29,27 @@ class RealmPersistInterface {
 
   setItem (key, value) {
     return new Promise((resolve, reject) => {
-      try {
-        this.getItem(key, (error) => {
-          this.realm.write(() => {
-            if (error) {
-              this.realm.create(
-                'Item',
-                {
-                  name: key,
-                  content: value
-                }
-              )
-            } else {
-              this.realm.create(
-                'Item',
-                {
-                  name: key,
-                  content: value
-                },
-                true
-              )
-            }
-
-            resolve()
-          })
+      this.getItem(key)
+        .then(() => {
+          try {
+            this.realm.write(() => {
+              this.realm.create('Item', { name: key, content: value }, true)
+              resolve()
+            })
+          } catch (e) {
+            reject(e)
+          }
         })
-      } catch (error) {
-        reject(error)
-      }
+        .catch(() => {
+          try {
+            this.realm.write(() => {
+              this.realm.create('Item', { name: key, content: value })
+              resolve()
+            })
+          } catch (e) {
+            reject(e)
+          }
+        })
     })
   }
 
@@ -66,9 +58,7 @@ class RealmPersistInterface {
       try {
         this.realm.write(() => {
           const item = this.items.filtered(`name = "${key}"`)
-
           this.realm.delete(item)
-
           resolve()
         })
       } catch (error) {
@@ -80,10 +70,7 @@ class RealmPersistInterface {
   getAllKeys () {
     return new Promise((resolve, reject) => {
       try {
-        const keys = this.items.map(
-          (item) => item.name
-        )
-
+        const keys = this.items.map((item) => item.name)
         resolve(keys)
       } catch (error) {
         reject(error)
